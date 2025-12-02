@@ -32,6 +32,9 @@ namespace MauiBlazorHybrid.Domain.Dtos
         public string? Telefono { get; set; }
         [Required(ErrorMessage = "Seleccione una nacionalidad")]
         public string? Nacionalidad { get; set; }
+        [Required(ErrorMessage = "Seleccione un seguro")]
+
+        public string? SeguroMedico { get; set; }
         public string? TipoSangre { get; set; }
         public string? Direccion { get; set; }
 

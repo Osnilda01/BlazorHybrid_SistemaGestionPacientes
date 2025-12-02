@@ -27,6 +27,7 @@ namespace MauiBlazorHybrid.Domain.Entities
         public string? Correo{ get; set; }
         public string? Telefono { get; set; }
         public string? Nacionalidad { get; set; }
+        public string? SeguroMedico { get; set; }
         public string? TipoSangre { get; set; }
         public string? Direccion { get; set; }
         public ICollection<Cita> Citas { get; set; } = new List<Cita>();

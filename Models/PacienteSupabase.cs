@@ -48,6 +48,10 @@ namespace MauiBlazorHybrid.Models
         [Column("direccion")]
         public string? Direccion { get; set; }
 
+        [Column("seguro_medico")]
+        public string? SeguroMedico { get; set; }
+
+
         // EF Core navigation properties no se usan en Supabase
         // public ICollection<Cita> Citas { get; set; } = new List<Cita>();
         // public ICollection<Doctor> Doctores { get; set; } = new List<Doctor>();

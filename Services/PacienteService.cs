@@ -46,6 +46,7 @@ namespace MauiBlazorHybrid.Services
                     Telefono = p.Telefono,
                     Nacionalidad = p.Nacionalidad,
                     TipoSangre = p.TipoSangre,
+                    SeguroMedico = p.SeguroMedico,
                     Direccion = p.Direccion
                 }).ToListAsync();
         }
@@ -66,6 +67,7 @@ namespace MauiBlazorHybrid.Services
                 Telefono = dto.Telefono,
                 Nacionalidad = dto.Nacionalidad,
                 TipoSangre = dto.TipoSangre,
+                SeguroMedico = dto.SeguroMedico,
                 Direccion = dto.Direccion,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -87,6 +89,7 @@ namespace MauiBlazorHybrid.Services
                 paciente.Correo = dto.Correo;
                 paciente.Telefono = dto.Telefono;
                 paciente.Nacionalidad = dto.Nacionalidad;
+                paciente.SeguroMedico = dto.SeguroMedico;
                 paciente.TipoSangre = dto.TipoSangre;
                 paciente.Direccion = dto.Direccion;
                 paciente.UpdatedAt = DateTime.UtcNow;

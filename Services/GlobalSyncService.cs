@@ -178,6 +178,7 @@ public class GlobalSyncService
                         Nacionalidad = remoto.Nacionalidad,
                         TipoSangre = remoto.TipoSangre,
                         Direccion = remoto.Direccion,
+                        SeguroMedico = remoto.SeguroMedico,
                         UpdatedAt = remoto.UpdatedAt
                     });
                 }
@@ -195,6 +196,7 @@ public class GlobalSyncService
                     pacienteActualizado.Cedula = remoto.Cedula;
                     pacienteActualizado.Nacionalidad = remoto.Nacionalidad;
                     pacienteActualizado.TipoSangre = remoto.TipoSangre;
+                    pacienteActualizado.SeguroMedico = remoto.SeguroMedico;
                     pacienteActualizado.Direccion = remoto.Direccion;
                     pacienteActualizado.UpdatedAt = remoto.UpdatedAt;
 
@@ -233,6 +235,7 @@ public class GlobalSyncService
                         Nacionalidad = local.Nacionalidad,
                         TipoSangre = local.TipoSangre,
                         Direccion = local.Direccion,
+                        SeguroMedico = local.SeguroMedico,
                         UpdatedAt = local.UpdatedAt
                     });
 
