@@ -1,0 +1,317 @@
+﻿@page "/citas"
+@using System.ComponentModel.DataAnnotations
+@using MauiBlazorHybrid.Services
+@using MauiBlazorHybrid.Domain.Dtos;
+@using MauiBlazorHybrid.Domain.Entities;
+@inject ICitaService CitaService
+@inject IPacienteService PacienteService
+@inject IDoctorService DoctorService
+
+
+
+<div class="citas-container">
+    <div class="citas-header">
+        <h1>📅 Gestión de Citas</h1>
+        <p>Programa y administra las citas de tus pacientes</p>
+    </div>
+
+    <div class="citas-content">
+        @if (ShowModal)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #0078d7 0%, #005fa3 100%)">
+                            <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar cita" : "Nueva cita")</b></h5>
+                        <button type="button" style="color:white" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body" style="background-color: #dbdbdb">
+        <div class="citas-form-section">
+            <EditForm Model="@nuevacita" OnValidSubmit="@GuardarCita">
+                <DataAnnotationsValidator />
+
+                <div class="citas-form-group">
+                    <label for="paciente">Paciente *</label>
+                    <InputSelect @bind-Value="nuevacita.PacienteId" class="form-control">
+                        <option value="0">Seleccionar paciente</option>
+                        @foreach (var paciente in pacientes)
+                        {
+                            <option value="@paciente.PacienteId">@paciente.Nombre @paciente.Apellido</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => nuevacita.PacienteId)" />
+                </div>
+                <div class="citas-form-group">
+                    <label for="paciente">Doctor *</label>
+                    <InputSelect @bind-Value="nuevacita.DoctorId" class="form-control">
+                        <option value="0">Selecciona el doctor</option>
+                        @foreach (var doctor in doctores)
+                        {
+                          <option value="@doctor.DoctorId">
+                                   @(doctor.Sexo == "Femenino"
+                                    ? $"Dra. {doctor.Nombre} {doctor.Apellido} - {doctor.Especialidad}"
+                                    : $"Dr. {doctor.Nombre} {doctor.Apellido} - {doctor.Especialidad}")
+                                    </option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => nuevacita.DoctorId)" />
+                </div>
+
+                <div class="citas-form-group">
+                    <label for="fecha">Fecha *</label>
+                    <InputDate @bind-Value="nuevacita.Fecha" class="form-control"/>
+                    <ValidationMessage For="@(() => nuevacita.Fecha)" />
+                </div>
+
+                <div class="citas-form-group">
+                    <label for="hora">Hora *</label>
+                    <InputDate Type="InputDateType.Time" @bind-Value="nuevacita.Hora" class="form-control"/>
+                    <ValidationMessage For="@(() => nuevacita.Hora)" />
+                </div>
+
+
+                <div class="citas-form-group">
+                    <label for="tipo">Tipo de Consulta *</label>
+                    <InputSelect @bind-Value="nuevacita.TipoConsulta" class="form-control">
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Primera Vez">Primera Vez</option>
+                        <option value="Seguimiento">Seguimiento</option>
+                        <option value="Urgencia">Urgencia</option>
+                        <option value="Control">Control</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => nuevacita.TipoConsulta)" />
+                </div>
+
+                <div class="citas-form-group">
+                    <label for="motivo">Motivo de Consulta *</label>
+                    <InputTextArea @bind-Value="nuevacita.Motivo" autocomplete="off" class="form-control"
+                                   placeholder="Describe brevemente el motivo de la cita..." />
+                </div>
+
+                <div class="citas-button-group">
+                                        <button type="submit" class="citas-btn citas-btn-primary" @onclick="GuardarCita">Agendar Cita</button>
+                    <button type="button" class="citas-btn citas-btn-secondary" @onclick="LimpiarFormulario">Limpiar</button>
+                </div>
+            </EditForm>
+        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="citas-list-section">
+            
+            <div style="display:flex; flex-direction: row">
+                <h2>Próximas Citas</h2>
+            <div style="margin-left: auto">
+                    <button class="btn btn-primary rounded-3 px-3 py-1" style="font-size:25px" @onclick="OpenModal"><b>+</b></button>
+            </div>
+                <div>
+                </div>
+            </div>
+            <br/>
+            <div id="listaCitas">
+                @if (citas.Any())
+                {
+                    @foreach (var cita in citas.OrderBy(c => c.Fecha).ThenBy(c => c.Hora))
+                    {
+                        <div class="cita-card">
+                            <div class="cita-header-info">
+                                <span class="cita-paciente-nombre">@cita.NombrePaciente</span>
+                                <span class="cita-estado-badge @(cita.Estado == "Confirmada" ? "cita-estado-confirmada" : "cita-estado-pendiente")">
+                                    @cita.Estado
+                                </span>
+                            </div>
+                            <div class="cita-detalles">
+                                <p><strong>📅 Fecha:</strong> @cita.Fecha.ToString("dd/MM/yyyy")</p>
+                                <p><strong>🕐 Hora:</strong> @cita.Hora.ToString("HH:mm")</p>
+                                <p><strong>👨‍⚕️ Doctor:</strong> @cita.NombreDoctor</p>
+                                <p><strong>📋 Tipo:</strong> @cita.TipoConsulta</p>
+                                <p><strong>💬 Motivo:</strong> @(string.IsNullOrEmpty(cita.Motivo) ? "Sin especificar" : cita.Motivo)</p>
+                            </div>
+                            <div class="cita-acciones">
+                                <button class="cita-btn-small cita-btn-edit" @onclick="() => EditarCita(cita)">Editar</button>
+                                @if (cita.Estado != "Completada")
+                                {
+                                    <button class="cita-btn-small btn-warning" @onclick="() => AlternarEstado(cita)">
+                                        @(cita.Estado == "Pendiente" ? "Cancelar" : "Reactivar")
+                                    </button>
+                                }
+                                <button class="cita-btn-small cita-btn-delete" @onclick="() => EliminarCita(cita)">Eliminar</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="citas-empty-state">
+                        <p>No hay citas programadas</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool ShowModal = false;
+    void OpenModal() => ShowModal = true;
+    void CloseModal()
+    {
+        ShowModal = false;
+        LimpiarFormulario();
+    }
+
+    private List<CitaDto> citas = new();
+    private List<DoctorDto> doctores = new();
+    private CitaDto nuevacita = new();
+    private List<PacienteDto> pacientes = new();
+    private bool editando = false;
+    private string busqueda = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ObtenerCitas();
+    }
+
+    private async Task ObtenerCitas()
+    {
+        try
+        {
+            await CitaService.ActualizarEstadoCitasAsync();
+            citas = await CitaService.ObtenerCitasAsync();
+            pacientes = await PacienteService.GetPacientesAsync();
+            doctores = await DoctorService.GetDoctoresAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar citas: {ex.Message}");
+        }
+    }
+
+    private async Task GuardarCita()
+    {
+        try
+        {
+            if (editando)
+            {
+                await CitaService.ModificarCita(nuevacita);
+                await Application.Current.MainPage.DisplayAlert("Éxito", "¡Cita actualizada exitosamente!", "OK");
+            }
+            else
+            {
+                await CitaService.CrearNuevaCita(nuevacita);
+                await Application.Current.MainPage.DisplayAlert("Éxito", "¡Cita registrada exitosamente!", "OK");
+            }
+
+            await ObtenerCitas();
+            CloseModal();
+            LimpiarFormulario();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al guardar la cita: {ex.Message}");
+            await Application.Current.MainPage.DisplayAlert("Error", "Ocurrió un problema al guardar la cita.", "OK");
+        }
+    }
+
+
+    private void AsignarNombrePaciente(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id))
+        {
+            var paciente = pacientes.FirstOrDefault(p => p.PacienteId == id);
+            if (paciente != null)
+            {
+                nuevacita.NombrePaciente = $"{paciente.Nombre} {paciente.Apellido}";
+            }
+        }
+    }
+
+    private async Task EditarCita(CitaDto cita)
+    {
+        OpenModal();
+        nuevacita = new CitaDto
+            {
+                CitaId = cita.CitaId,
+                PacienteId = cita.PacienteId,
+                DoctorId = cita.DoctorId,
+                NombrePaciente = cita.NombrePaciente,
+                NombreDoctor = cita.NombreDoctor,
+                Fecha = cita.Fecha,
+                Hora = cita.Hora,
+                Doctor = cita.Doctor,
+                TipoConsulta = cita.TipoConsulta,
+                Motivo = cita.Motivo,
+                Estado = cita.Estado
+
+            };
+        editando = true;
+    }
+
+    private void LimpiarFormulario()
+    {
+        nuevacita = new CitaDto
+        {
+            Fecha = DateTime.Now.AddDays(1),
+            Hora = DateTime.Parse("08:00")
+        };
+        editando = false;
+    }
+
+    private async Task AlternarEstado(CitaDto cita)
+    {
+        if (cita.Estado == "Pendiente")
+        {
+            await CitaService.CancelarCita(cita.CitaId);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "Cita cancelada exitosamente", "OK");
+        }
+        else if (cita.Estado == "Cancelada")
+        {
+            await CitaService.CitaPendiente(cita.CitaId);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "Cita reactivada exitosamente", "OK");
+
+        }
+        StateHasChanged();
+        await ObtenerCitas();
+    }
+
+
+    private async Task CancelarCita(CitaDto cita)
+    {
+        bool confirmar = await Application.Current.MainPage.DisplayAlert(
+            "Confirmar",
+            "¿Estás seguro de cancelar esta cita?",
+            "Sí",
+            "No");
+
+        if (confirmar)
+        {
+            await CitaService.CancelarCita(cita.CitaId);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "Cita cancelada exitosamente", "OK");
+            await ObtenerCitas();
+        }
+    }
+
+    private async Task EliminarCita(CitaDto cita)
+    {
+        bool confirmar = await Application.Current.MainPage.DisplayAlert(
+            "Confirmar",
+            "¿Estás seguro de eliminar esta cita?",
+            "Sí",
+            "No");
+
+        if (confirmar)
+        {
+            await CitaService.EliminarCita(cita.CitaId);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "Cita eliminada exitosamente", "OK");
+            await ObtenerCitas();
+        }
+    }
+
+    private string ObtenerNombrePaciente(int pacienteId)
+    {
+        return pacientes.FirstOrDefault(p => p.PacienteId == pacienteId)?.Nombre ?? "Desconocido";
+    }
+
+}

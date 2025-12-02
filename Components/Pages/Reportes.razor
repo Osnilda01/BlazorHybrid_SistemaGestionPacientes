@@ -1,0 +1,317 @@
+﻿@page "/reportes"
+@using System.Linq
+@using MauiBlazorHybrid.Services
+@using ClosedXML.Excel;
+@using CommunityToolkit.Maui.Storage;
+@using ChartJs.Blazor
+@using ChartJs.Blazor.Common
+@using ChartJs.Blazor.BarChart
+@using ChartJs.Blazor.PieChart
+@using ChartJs.Blazor.Util
+@using MauiBlazorHybrid.Domain.Helpers
+@inject IPacienteService PacienteService
+@inject ICitaService CitaService
+
+
+
+<div class="reportes-container">
+    <div class="reportes-header">
+        <h1>📊 Reportes y Estadísticas</h1>
+        <p>Analiza el desempeño y estadísticas</p>
+    </div>
+
+
+        <div class="filter-group mt-3">
+            <label style="margin-left: 10%">Tipo de Reporte:</label>
+            <select @bind="tipoReporte" class="filter-select">
+                <option value="general">General</option>
+            </select>
+        <button style="margin-right: 5%" class="btn-export" @onclick="ExportarReporteCitas" @onclick:preventDefault="true">📥 Generar Excel</button>
+        </div>
+    
+
+    <div class="reportes-content">
+        <!-- Tarjetas de Estadísticas Principales -->
+        <div class="stats-grid">
+            <div class="stat-card-large stat-primary">
+                <div class="stat-icon">📅</div>
+                <div class="stat-info">
+                <div class="stat-value">@citas.Count()</div>
+                    <div class="stat-label">Total Citas</div>
+                </div>
+            </div>
+
+            <div class="stat-card-large stat-success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                <div class="stat-value">@citas.Where(c => c.Estado.Trim().ToLower() == "completada").Count()</div>
+                    <div class="stat-label">Citas Completadas</div>
+                </div>
+            </div>
+
+            <div class="stat-card-large stat-warning">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-info">
+                <div class="stat-value">@citas.Where(c => c.Estado.Trim().ToLower() == "pendiente").Count()</div>
+                    <div class="stat-label">Citas Pendientes</div>
+                </div>
+            </div>
+
+            <div class="stat-card-large stat-danger">
+                <div class="stat-icon">❌</div>
+                <div class="stat-info">
+                <div class="stat-value">@citas.Where(c => c.Estado.Trim().ToLower() == "cancelada").Count()</div>
+                    <div class="stat-label">Citas Canceladas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos y Tablas -->
+        <div class="reportes-grid">
+            <!-- Citas por Tipo -->
+            <div class="reporte-card">
+                <h3>📋 Citas por Tipo de Consulta</h3>
+                <div class="chart-container">
+            @if (barChartConfig != null)
+            {
+                        <div style="width:100%; height:210px; max-width:400px;" class="graph">
+                    <Chart Config="@barChartConfig" />
+                </div>
+            }
+            else
+            {
+                <p>Cargando gráfico...</p>
+            }
+                </div>
+            </div>
+
+            <!-- Pacientes Nuevos vs Recurrentes-->
+            <div class="reporte-card">
+                <h3>👥 Pacientes Nuevos vs Recurrentes</h3>
+                <div class="pie-chart-container">
+                    @if (pieConfig != null)
+                    {
+                        <div style="width:100%; height:210px; max-width:400px;" class="graph">
+                            <Chart Config="@pieConfig" />
+                        </div>
+                    }
+                    else
+                    {
+                        <p>Cargando gráfico...</p>
+                    }
+                </div>
+                </div>
+            </div>
+            <br/>
+            <!-- Top pacientes con mas citas-->
+            <div class="reporte-card reporte-card-full">
+                <h3>⭐ Top 10 Pacientes Frecuentes</h3>
+                <div class="table-responsive table">
+                    <table class="reportes-table  table-striped">
+                        <thead class="thead-light">
+                            <tr>
+                                <th><b>#</b></th>
+                                <th>Paciente</th>
+                                <th>Total Citas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in pacientesFrecuentes.Select((value, index) => new { value, index }))
+                            {
+                                <tr>
+                                    <td><b>@(p.index + 1)</b></td>
+                                    <td>@p.value.NombrePaciente</td>
+                                    <td>@p.value.NumeroCitas</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private string periodoSeleccionado = "mes";
+    private string tipoReporte = "general";
+    private EstadisticasModel estadisticas = new EstadisticasModel();
+    private List<PacienteDto> pacientes = new();
+    private List<CitaDto> citas = new();
+    private List<(string NombrePaciente, int NumeroCitas)> pacientesFrecuentes;
+    private int cuentacitas;
+
+    //Para los graficos de chartjs:
+    private BarConfig? barChartConfig;
+    private PieConfig? pieConfig;
+
+
+    protected override async void OnInitialized()
+    {
+        CargarEstadisticas();
+        pacientes = await PacienteService.GetPacientesAsync();
+        citas = await CitaService.ObtenerCitasAsync();
+        pacientesFrecuentes = await CitaService.ObtenerPacientesFrecuentesAsync();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && citas != null && citas.Any())
+        {
+            // Configuración inicial del gráfico SOLO la primera vez
+            var tiposDeseados = new List<string> { "Primera Vez", "Seguimiento", "Control", "Urgencia" };
+            var colores = new[] { "#66CCFF", "#0078D7", "#28A745", "#FFD700" };
+
+            var dataset = new BarDataset<int>
+                {
+                    Label = "Citas",
+                    BackgroundColor = colores
+                };
+
+            barChartConfig = new BarConfig
+                {
+                    Options = new ExtendedBarOptions
+                    {
+                        Responsive = true,
+                        MaintainAspectRatio = false,
+                        IndexAxis = "y"
+                    }
+                };
+
+            foreach (var tipo in tiposDeseados)
+            {
+                barChartConfig.Data.Labels.Add(tipo);
+                int cantidad = citas.Count(c => c.TipoConsulta == tipo);
+                dataset.Add(cantidad);
+            }
+
+            barChartConfig.Data.Datasets.Add(dataset);
+
+            //Segundo grafico:
+           
+            // Calcular cantidades
+            var agrupadoPorPaciente = citas.GroupBy(c => c.PacienteId);
+
+            // Contamos cuántos pacientes son nuevos y cuántos recurrentes
+            int nuevos = agrupadoPorPaciente.Count(g => g.Count() == 1);
+            int recurrentes = agrupadoPorPaciente.Count(g => g.Count() > 1);
+
+            var colorespie = new[] { "#66CCFF", "#28A745" }; // azul = nuevos, verde = recurrentes
+
+            var dataset2 = new PieDataset<int>
+                {
+                    BackgroundColor = colores
+                };
+
+            pieConfig = new PieConfig
+                {
+                    Options = new PieOptions
+                    {
+                        Responsive = true,
+                        MaintainAspectRatio = false
+                    }
+                };
+
+            pieConfig.Data.Labels.Add("Nuevos");
+            dataset2.Add(nuevos);
+
+            pieConfig.Data.Labels.Add("Recurrentes");
+            dataset2.Add(recurrentes);
+
+            pieConfig.Data.Datasets.Add(dataset2);
+
+
+            // Forzar refresco del componente para que el gráfico se muestre
+            StateHasChanged();
+        }
+    }
+
+    private void CargarEstadisticas()
+    {
+        
+    }
+
+    private async Task ExportarReporteCitas()
+    {
+        using var workbook = new XLWorkbook();
+        var wsStats = workbook.Worksheets.Add("Estadísticas");
+
+        // Encabezados
+        wsStats.Cell(1, 1).Value = "Métrica";
+        wsStats.Cell(1, 2).Value = "Cantidad";
+
+        // Estadísticas
+        wsStats.Cell(2, 1).Value = "Total Citas";
+        wsStats.Cell(2, 2).Value = citas.Count;
+
+        wsStats.Cell(3, 1).Value = "Completadas";
+        wsStats.Cell(3, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "completada");
+
+        wsStats.Cell(4, 1).Value = "Pendientes";
+        wsStats.Cell(4, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "pendiente");
+
+        wsStats.Cell(5, 1).Value = "Canceladas";
+        wsStats.Cell(5, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "cancelada");
+
+        wsStats.Columns().AdjustToContents();
+
+        // Guardar en memoria
+        using var ms = new MemoryStream();
+        workbook.SaveAs(ms);
+        ms.Position = 0;
+
+        // Guardar con FileSaver
+        var result = await FileSaver.Default.SaveAsync(
+            "ReporteEstadisticasCitas.xlsx",
+            ms
+        );
+
+        if (!result.IsSuccessful)
+        {
+            Console.WriteLine($"Error al guardar: {result.Exception?.Message}");
+        }
+    }
+
+
+
+
+    public class EstadisticasModel
+    {
+        public int TotalCitas { get; set; }
+        public int CitasCompletadas { get; set; }
+        public int CitasPendientes { get; set; }
+        public int CitasCanceladas { get; set; }
+        public int CitasConfirmadas { get; set; }
+        public int PacientesNuevos { get; set; }
+        public int PacientesRecurrentes { get; set; }
+        public int PorcentajeNuevos { get; set; }
+        public int PorcentajeRecurrentes { get; set; }
+        public decimal IngresosTotales { get; set; }
+        public int ConsultasCobradas { get; set; }
+        public decimal PromedioConsulta { get; set; }
+        public decimal PendienteCobro { get; set; }
+        public List<CitaPorTipo> CitasPorTipo { get; set; } = new();
+        public List<HorarioSolicitado> HorariosMasSolicitados { get; set; } = new();
+        public List<PacienteFrecuente> TopPacientes { get; set; } = new();
+    }
+
+    public class CitaPorTipo
+    {
+        public string Tipo { get; set; } = string.Empty;
+        public int Cantidad { get; set; }
+        public int Porcentaje { get; set; }
+    }
+
+    public class HorarioSolicitado
+    {
+        public string Horario { get; set; } = string.Empty;
+        public int Cantidad { get; set; }
+        public int Porcentaje { get; set; }
+    }
+
+    public class PacienteFrecuente
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public int TotalCitas { get; set; }
+        public DateTime UltimaVisita { get; set; }
+    }
+}

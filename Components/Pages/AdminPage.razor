@@ -1,0 +1,220 @@
+﻿@page "/adminpage"
+@using MauiBlazorHybrid.Domain.Entities
+@using MauiBlazorHybrid.Services
+@inject IUserService UserService
+
+<div class="pacientes-container">
+        <div class="pacientes-header">
+        <h1>👤 Usuarios</h1>
+        <p>Administra usuarios del sistema</p>
+        </div>
+
+        <div class="pacientes-content">
+        @if (ShowModal)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #0078d7 0%, #005fa3 100%)">
+                            <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar Usuario" : "Nuevo Usuario")</b></h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body" style="background-color: #f7f7f7">
+                        <div class="pacientes-form-section">
+                            <EditForm Model="@nuevousuario" OnValidSubmit="@GuardarUsuario">
+                                <DataAnnotationsValidator />
+
+                                <div class="pacientes-form-group">
+                                    <label for="nombre">Nombre *</label>
+                                <InputText @bind-Value="nuevousuario.Nombre" autocomplete="off" class="form-control"
+                                               placeholder="Ej: Carlos Martin" />
+                                    <ValidationMessage For="@(() => nuevousuario.Nombre)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="apellido">Contraseña *</label>
+                                <InputText @bind-Value="nuevousuario.Contraseña" autocomplete="off" class="form-control"/>
+                                <ValidationMessage For="@(() => nuevousuario.Contraseña)" />
+                                </div>
+
+                                    <div class="pacientes-form-group">
+                                        <label for="rol">Rol *</label>
+                                        <InputSelect @bind-Value="nuevousuario.Rol" class="form-control">
+                                            <option value="">Seleccionar</option>
+                                            <option value="Admin">Admin</option>
+                                            <option value="Secretario/a">Secretario/a</option>
+                                            <option value="Doctor">Doctor</option>
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => nuevousuario.Rol)" />
+                                    </div>
+
+                                <div class="pacientes-button-group">
+                                    <button type="submit" class="pacientes-btn pacientes-btn-primary">
+                                        @(editando ? "Actualizar" : "Crear") Usuario
+                                    </button>
+                                    <button type="button" class="pacientes-btn pacientes-btn-secondary" @onclick="LimpiarFormulario">
+                                        @(editando ? "Cancelar" : "Limpiar")
+                                    </button>
+                                </div>
+                            </EditForm>
+                              
+                        </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        }
+            <div class="pacientes-list-section">
+                <div class="pacientes-search-bar">
+                    <h2>Usuarios del sistema</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                    <button class="btn btn-primary rounded-3 px-3 py-1" style="font-size:25px" @onclick="OpenModal"><b>+</b></button>
+                    <input type="text" style="min-width: 350px" class="pacientes-search-input"
+                           placeholder="🔍 Buscar por nombre o rol"
+                           @bind="busqueda" @bind:event="oninput" />
+                </div>
+                </div>
+
+                <div id="listaPacientes">
+                    @if (UsuariosFiltrados().Any())
+                    {
+                        @foreach (var usuario in UsuariosFiltrados())
+                        {
+                            <div class="paciente-card">
+                                <div class="paciente-header-info">
+                                    <div class="paciente-nombre-section">
+                                        <span class="paciente-nombre">@usuario.Nombre</span>
+                                    </div>
+                                </div>
+                                    <div class="paciente-detalle-row">
+                                <span class="detalle-icon"><img src="img/oi--lock-locked.png" alt="rol" style="width:20px; height:20px;" /></span>
+                                        <span><strong>Rol:</strong> @usuario.Rol</span>
+                                    </div>
+                            <div class="paciente-acciones">
+                                <button class="paciente-btn-small paciente-btn-edit" @onclick="() => EditarUsuario(usuario)">
+                                    Editar
+                                </button>
+                                <button class="paciente-btn-small btn-danger paciente-btn-cross" @onclick="() => EliminarUsuario(usuario)">
+                                    Eliminar
+                                </button>
+                            </div>
+                                </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="pacientes-empty-state">
+                            <p>@(string.IsNullOrEmpty(busqueda) ? "No hay usuarios registrados" : "No se encontraron usuarios")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private List<UsuarioDto> usuarios = new();
+    private UsuarioDto nuevousuario = new();
+    private bool editando = false;
+    private string busqueda = string.Empty;
+
+    private bool ShowModal = false;
+    void OpenModal() => ShowModal = true;
+    void CloseModal()
+    {
+        ShowModal = false;
+        LimpiarFormulario();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ObtenerUsuarios();
+    }
+
+    private async Task ObtenerUsuarios()
+    {
+        try
+        {
+            usuarios = await UserService.GetUsuariosAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar usuarios: {ex.Message}");
+        }
+    }
+
+    private async Task GuardarUsuario()
+    {
+        try
+        {
+            if (editando)
+            {
+                await UserService.ModificarUsuario(nuevousuario);
+                await Application.Current.MainPage.DisplayAlert("Éxito", "¡Usuario modificado exitosamente!", "OK");
+            }
+            else
+            {
+                await UserService.CrearNuevoUsuario(nuevousuario);
+                await Application.Current.MainPage.DisplayAlert("Éxito", "¡Usuario creado exitosamente!", "OK");
+            }
+
+            await ObtenerUsuarios();
+            CloseModal();
+            LimpiarFormulario();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al guardar la cita: {ex.Message}");
+            await Application.Current.MainPage.DisplayAlert("Error", "Ocurrió un problema al guardar el usuario.", "OK");
+        }
+    }
+
+    private async Task EditarUsuario(UsuarioDto usuario)
+    {
+        OpenModal();
+        nuevousuario = new UsuarioDto
+            {
+                Id = usuario.Id,
+                Nombre = usuario.Nombre,
+                Contraseña = usuario.Contraseña,
+                Rol = usuario.Rol
+            };
+        editando = true;
+    }
+
+    private async Task EliminarUsuario(UsuarioDto usuario)
+    {
+        bool confirmar = await Application.Current.MainPage.DisplayAlert(
+            "Confirmar",
+            "¿Estás seguro de eliminar a este usuario?",
+            "Sí",
+            "No");
+
+        if (confirmar)
+        {
+            await UserService.EliminarUsuario(usuario.Id);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "Usuario eliminado exitosamente", "OK");
+            await ObtenerUsuarios();
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        nuevousuario = new UsuarioDto();
+        editando = false;
+    }
+
+    private List<UsuarioDto> UsuariosFiltrados()
+    {
+        if (string.IsNullOrEmpty(busqueda))
+            return usuarios;
+
+        return usuarios
+            .Where(u =>
+                (!string.IsNullOrEmpty(u.Nombre) && u.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(u.Rol) && u.Rol.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
+            )
+            .ToList();
+    }
+}

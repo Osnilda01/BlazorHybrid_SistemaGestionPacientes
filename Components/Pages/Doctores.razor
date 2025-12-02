@@ -1,0 +1,266 @@
+﻿@page "/doctores"
+@using System.ComponentModel.DataAnnotations
+@using MauiBlazorHybrid.Services
+@inject IDoctorService DoctorService
+@using Microsoft.AspNetCore.Components.Authorization
+
+    
+    <div class="pacientes-container">
+        <div class="pacientes-header">
+            <h1>👨‍⚕️ Doctores</h1>
+            <p>Administra la información de tus doctores</p>
+        </div>
+
+        <div class="pacientes-content">
+        @if (ShowModal)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #0078d7 0%, #005fa3 100%)">
+                            <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar Doctor" : "Nuevo Doctor")</b></h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body" style="background-color: #f7f7f7">
+                        <div class="pacientes-form-section">
+                            <EditForm Model="@nuevodoctor" OnValidSubmit="@GuardarDoctor">
+                                <DataAnnotationsValidator />
+
+                                <div class="pacientes-form-group">
+                                    <label for="nombre">Nombre *</label>
+                                <InputText @bind-Value="nuevodoctor.Nombre" autocomplete="off" class="form-control"
+                                               placeholder="Ej: Carlos Martin" />
+                                    <ValidationMessage For="@(() => nuevodoctor.Nombre)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="apellido">Apellido *</label>
+                                <InputText @bind-Value="nuevodoctor.Apellido" autocomplete="off" class="form-control"
+                                               placeholder="García Almanzar" />
+                                <ValidationMessage For="@(() => nuevodoctor.Apellido)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="telefono">Teléfono</label>
+                                <InputText @bind-Value="nuevodoctor.Telefono" autocomplete="off" class="form-control"
+                                               placeholder="809-000-0000" />
+                                <ValidationMessage For="@(() => nuevodoctor.Telefono)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="sexo">Sexo *</label>
+                                <InputSelect @bind-Value="nuevodoctor.Sexo"  class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                    </InputSelect>
+                                <ValidationMessage For="@(() => nuevodoctor.Sexo)" />
+                                </div>
+
+                    
+                                <div class="pacientes-form-group">
+                                    <label for="email">Correo Electrónico</label>
+                                <InputText @bind-Value="nuevodoctor.Correo" class="form-control"
+                                               placeholder="correo@ejemplo.com" />
+                                <ValidationMessage For="@(() => nuevodoctor.Correo)" />
+                                </div>
+
+                            <div class="pacientes-form-group">
+                                <label for="especialidad">Especialidad *</label>
+                                <InputText @bind-Value="nuevodoctor.Especialidad" class="form-control"
+                                           placeholder="Ej: Neurologia" />
+                                <ValidationMessage For="@(() => nuevodoctor.Especialidad)" />
+                            </div>
+
+                                <div class="pacientes-button-group">
+                                    <button type="submit" class="pacientes-btn pacientes-btn-primary">
+                                        @(editando ? "Actualizar" : "Registrar") Doctor
+                                    </button>
+                                    <button type="button" class="pacientes-btn pacientes-btn-secondary" @onclick="LimpiarFormulario">
+                                        @(editando ? "Cancelar" : "Limpiar")
+                                    </button>
+                                </div>
+                            </EditForm>
+                              
+                        </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        }
+            <div class="pacientes-list-section">
+                <div class="pacientes-search-bar">
+                    <h2>Lista de Doctores</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                    <AuthorizeView Roles="Admin">
+                                 <Authorized>
+                    <button class="btn btn-primary rounded-3 px-3 py-1" style="font-size:25px" @onclick="OpenModal"><b>+</b></button>
+                        </Authorized>
+                    </AuthorizeView>
+                    <input type="text" style="min-width: 350px" class="pacientes-search-input"
+                           placeholder="🔍 Buscar por nombre o especialidad..."
+                           @bind="busqueda" @bind:event="oninput" />
+                </div>
+                </div>
+
+                <div class="pacientes-stats">
+                    <div class="stat-card">
+                        <div class="stat-value">@doctores.Count</div>
+                        <div class="stat-label">Total Doctores</div>
+                    </div>
+                </div>
+
+                <div id="listaPacientes">
+                    @if (DoctoresFiltrados().Any())
+                    {
+                        @foreach (var doctor in DoctoresFiltrados())
+                        {
+                            <div class="paciente-card">
+                                <div class="paciente-header-info">
+                                    <div class="paciente-nombre-section">
+                                    <span class="paciente-nombre">
+                                        @(doctor.Sexo == "Femenino"
+                                            ? $"Dra. {doctor.Nombre} {doctor.Apellido}"
+                                            : $"Dr. {doctor.Nombre} {doctor.Apellido}")
+                                    </span>
+                                    </div>
+                                </div>
+                                    <div class="paciente-detalle-row">
+                                        <span class="detalle-icon">📞</span>
+                                        <span><strong>Teléfono:</strong> @doctor.Telefono</span>
+                                    </div>
+                                    <div class="paciente-detalle-row">
+                                        <span class="detalle-icon">👤</span>
+                                        <span><strong>Sexo:</strong> @doctor.Sexo</span>
+                                    </div>
+                                    <div class="paciente-detalle-row">
+                                <span class="detalle-icon">📋</span>
+                                        <span><strong>Especialidad:</strong> @doctor.Especialidad</span>
+                                    </div>
+                                        <div class="paciente-detalle-row">
+                                            <span class="detalle-icon">✉️</span>
+                                            <span><strong>Email:</strong> @doctor.Correo</span>
+                                        </div>
+                            <div class="paciente-acciones">
+                                <AuthorizeView Roles="Admin">
+                                 <Authorized>
+                                <button class="paciente-btn-small paciente-btn-edit" @onclick="() => EditarDoctor(doctor)">
+                                    Editar
+                                </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="Admin">
+                                 <Authorized>
+                                <button class="paciente-btn-small btn-danger paciente-btn-cross" @onclick="() => EliminarDoctor(doctor)">
+                                    Eliminar
+                                </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                            </div>
+                                </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="pacientes-empty-state">
+                            <p>@(string.IsNullOrEmpty(busqueda) ? "No hay doctores registrados" : "No se encontraron doctores")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+@code {
+    private bool ShowModal = false;
+    void OpenModal() => ShowModal = true;
+    void CloseModal()
+    {
+        ShowModal = false;
+        LimpiarFormulario();
+    }
+
+    private List<DoctorDto> doctores = new();
+    private DoctorDto nuevodoctor = new();
+    private bool editando = false;
+    private string busqueda = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ObtenerDoctores();
+    }
+
+    private async Task ObtenerDoctores()
+    {
+        try
+        {
+            doctores = await DoctorService.GetDoctoresAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar doctores: {ex.Message}");
+        }
+
+    }
+
+    private async Task GuardarDoctor()
+    {
+        if (editando)
+        {
+            await DoctorService.ModificarDoctor(nuevodoctor);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "¡Doctor actualizado exitosamente!", "OK");
+        }
+        else
+        {
+            await DoctorService.CrearNuevoDoctor(nuevodoctor);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "¡Doctor registrado exitosamente!", "OK");
+        }
+        await ObtenerDoctores();
+        CloseModal();
+        LimpiarFormulario();
+    }
+
+    private async Task EditarDoctor(DoctorDto doctor)
+    {
+        OpenModal();
+        nuevodoctor = new DoctorDto
+            {
+                DoctorId = doctor.DoctorId,
+                Nombre = doctor.Nombre,
+                Apellido = doctor.Apellido,
+                Sexo = doctor.Sexo,
+                Correo = doctor.Correo,
+                Telefono = doctor.Telefono,
+                Especialidad = doctor.Especialidad
+            };
+        editando = true;
+    }
+
+    private async Task EliminarDoctor(DoctorDto doctor)
+    {
+        await DoctorService.EliminarDoctor(doctor.DoctorId);
+        await Application.Current.MainPage.DisplayAlert("Éxito", "Doctor eliminado exitosamente", "OK");
+        await ObtenerDoctores();
+    }
+
+    private void LimpiarFormulario()
+    {
+        nuevodoctor = new DoctorDto(); // Limpia el formulario
+        editando = false;
+    }
+
+    private List<DoctorDto> DoctoresFiltrados()
+    {
+        if (string.IsNullOrEmpty(busqueda))
+            return doctores;
+
+        return doctores
+            .Where(d =>
+                (!string.IsNullOrEmpty(d.Nombre) && d.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(d.Especialidad) && d.Especialidad.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
+            )
+            .ToList(); // Esto debe devolver List<DoctorDto>
+    }
+}

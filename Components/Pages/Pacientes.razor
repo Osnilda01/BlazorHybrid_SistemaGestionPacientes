@@ -1,0 +1,339 @@
+﻿@page "/pacientes"
+@using System.ComponentModel.DataAnnotations
+@using MauiBlazorHybrid.Services
+@inject IPacienteService PacienteService
+@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="pacientes-container">
+    <div class="pacientes-header">
+        <h1>👥 Gestión de Pacientes</h1>
+        <p>Administra la información de tus pacientes</p>
+    </div>
+
+    @if (ShowModal)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #0078d7 0%, #005fa3 100%)">
+                        <h5 class="modal-title" style="color: white" ><b>@(editando ? "Editar Paciente" : "Nuevo Paciente")</b></h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body" style="background-color: #f7f7f7">
+                        <div class="pacientes-form-section">
+                            <EditForm Model="@nuevopaciente" OnValidSubmit="@GuardarPaciente">
+                                <DataAnnotationsValidator />
+                                <div>
+                                <div class="pacientes-form-group">
+                                    <label for="nombre">Nombre *</label>
+                                    <InputText @bind-Value="nuevopaciente.Nombre" class="form-control"
+                                               placeholder="Ej: Juan Pérez" autocomplete="off" />
+                                    <ValidationMessage For="@(() => nuevopaciente.Nombre)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="apellido">Apellido *</label>
+                                    <InputText @bind-Value="nuevopaciente.Apellido" class="form-control"
+                                               placeholder="García Almanzar" autocomplete="off" />
+                                    <ValidationMessage For="@(() => nuevopaciente.Apellido)" />
+                                </div>
+                                </div>
+                                <div class="pacientes-form-group">
+                                    <label for="cedula">Cédula/DNI *</label>
+                                    <InputText @bind-Value="nuevopaciente.Cedula" class="form-control"
+                                               placeholder="000-0000000-0" autocomplete="off" />
+                                    <ValidationMessage For="@(() => nuevopaciente.Cedula)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="fechaNacimiento">Fecha de Nacimiento *</label>
+                                    <InputDate @bind-Value="nuevopaciente.FechaNacimiento" @onchange="ActualizarEdad" class="form-control" />
+                                    <ValidationMessage For="@(() => nuevopaciente.FechaNacimiento)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="sexo">Sexo *</label>
+                                    <InputSelect @bind-Value="nuevopaciente.Sexo" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => nuevopaciente.Sexo)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="telefono">Teléfono *</label>
+                                    <InputText @bind-Value="nuevopaciente.Telefono" class="form-control"
+                                               placeholder="809-000-0000" autocomplete="off" />
+                                    <ValidationMessage For="@(() => nuevopaciente.Telefono)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="Nacionalidad">Nacionalidad *</label>
+                                    <InputSelect @bind-Value="nuevopaciente.Nacionalidad" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="Dominicana">Dominicana</option>
+                                        <option value="Venezolana">Venezolana</option>
+                                        <option value="Colombiana">Colombiana</option>
+                                        <option value="Mexicana">Mexicana</option>
+                                        <option value="Española">Española</option>
+                                        <option value="Haitiana">Haitiana</option>
+                                        <option value="Estadounidense">Estadounidense</option>
+                                        <option value="Argentina">Argentina</option>
+                                        <option value="Peruana">Peruana</option>
+                                        <option value="Chilena">Chilena</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => nuevopaciente.Nacionalidad)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="Nacionalidad">Tipo de sangre *</label>
+                                    <InputSelect @bind-Value="nuevopaciente.TipoSangre" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="A+">A+</option>
+                                        <option value="A-">A-</option>
+                                        <option value="B+">B+</option>
+                                        <option value="B-">B-</option>
+                                        <option value="AB+">AB+</option>
+                                        <option value="AB-">AB-</option>
+                                        <option value="O+">O+</option>
+                                        <option value="O-">O-</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => nuevopaciente.TipoSangre)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="email">Correo Electrónico</label>
+                                    <InputText @bind-Value="nuevopaciente.Correo" class="form-control"
+                                               placeholder="correo@ejemplo.com" autocomplete="off" />
+                                    <ValidationMessage For="@(() => nuevopaciente.Correo)" />
+                                </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="direccion">Dirección</label>
+                                    <InputTextArea @bind-Value="nuevopaciente.Direccion" class="form-control"
+                                                   placeholder="Dirección completa del paciente..." autocomplete="off" />
+                                </div>
+
+                                <div class="pacientes-button-group">
+                                        <button type="submit" class="pacientes-btn pacientes-btn-primary">
+                                        @(editando ? "Actualizar" : "Registrar") Paciente
+                                    </button>
+                                    <button type="button" class="pacientes-btn pacientes-btn-secondary" @onclick="LimpiarFormulario">
+                                        @(editando ? "Cancelar" : "Limpiar")
+                                    </button>
+                                </div>
+                            </EditForm>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    <div class="pacientes-content">
+        
+
+        <div class="pacientes-list-section">
+            <div class="pacientes-search-bar">
+                <h2>Lista de Pacientes</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                    <button class="btn btn-primary rounded-3 px-3 py-1" style="font-size:25px" @onclick="OpenModal"><b>+</b></button>
+                    <input style="flex: 1; min-width: 350px;" type="text" class="pacientes-search-input"
+                           placeholder="🔍 Buscar por nombre o cédula..." 
+                       @bind="busqueda" @bind:event="oninput" />
+                </div>
+            </div>
+
+            <div class="pacientes-stats">
+                <div class="stat-card">
+                    <div class="stat-value">@pacientes.Count</div>
+                    <div class="stat-label">Total Pacientes</div>
+                </div>
+            </div>
+
+            <div id="listaPacientes">
+                @if (PacientesFiltrados().Any())
+                {
+                    @foreach (var paciente in PacientesFiltrados())
+                        {
+                                <div class="paciente-card">
+                                    <div class="paciente-header-info">
+                                        <div class="paciente-nombre-section">
+                                    <span class="paciente-nombre">@paciente.Nombre @paciente.Apellido </span>
+                                    <span class="paciente-edad">@paciente.Edad años</span>
+                                        </div>
+                                    </div>
+                                    <div class="paciente-detalles">
+                                <div>
+                                        <div class="paciente-detalle-row">
+                                            <span class="detalle-icon">🆔</span>
+                                        <span><strong>Cédula:</strong>@(string.IsNullOrEmpty(paciente.Cedula) ? "Sin especificar" : paciente.Cedula)</span>
+                                        </div>
+                                        <div class="paciente-detalle-row">
+                                            <span class="detalle-icon">📞</span>
+                                        <span><strong>Teléfono:</strong>@(string.IsNullOrEmpty(paciente.Telefono) ? "Sin especificar" : paciente.Telefono)</span>
+                                        </div>
+                                        <div class="paciente-detalle-row">
+                                            <span class="detalle-icon">👤</span>
+                                            <span><strong>Sexo:</strong> @paciente.Sexo</span>
+                                        </div>
+                                        </div>
+                                        <div>
+                                                <div class="paciente-detalle-row">
+                                                    <span class="detalle-icon">✉️</span>
+                                                    <span><strong>Email:</strong> @paciente.Correo</span>
+                                                </div>
+                                        
+                                            <div class="paciente-detalle-row">
+                                            <span class="detalle-icon">📍</span>
+                                                <span><strong>Direccion:</strong> @paciente.Direccion</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="paciente-acciones">
+                                        <button class="paciente-btn-small paciente-btn-edit" @onclick="() => EditarPaciente(paciente)">
+                                            Editar
+                                        </button>
+                                        <AuthorizeView Roles="Admin, Secretario/a">
+                                            <Authorized>
+                                        <button class="paciente-btn-small btn-danger paciente-btn-cross" @onclick="() => EliminarPaciente(paciente)">
+                                            Eliminar
+                                        </button>
+                                            </Authorized>
+                                        </AuthorizeView>
+
+
+                                    </div>
+                                </div>
+                        }
+                }
+                else
+                {
+                        <div class="pacientes-empty-state">
+                            <p>@(string.IsNullOrEmpty(busqueda) ? "No hay pacientes registrados" : "No se encontraron pacientes")</p>
+                        </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool ShowModal = false;
+    void OpenModal() => ShowModal = true;
+    void CloseModal(){ 
+        ShowModal = false;
+        LimpiarFormulario();
+    }
+
+    private List<PacienteDto> pacientes = new();
+    private PacienteDto nuevopaciente = new();
+    private bool editando = false;
+    private string busqueda = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ObtenerPacientes();
+    }
+
+    private async Task ObtenerPacientes()
+    {
+        try
+        {
+            pacientes = await PacienteService.GetPacientesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar pacientes: {ex.Message}");
+        }
+
+    }
+
+
+
+    private async Task GuardarPaciente()
+    {
+        nuevopaciente.Edad = CalcularEdad(nuevopaciente.FechaNacimiento);
+
+        if (editando)
+        {
+            await PacienteService.ModificarPaciente(nuevopaciente);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "¡Paciente actualizado exitosamente!", "OK");
+        }
+        else
+        {
+            await PacienteService.CrearNuevoPaciente(nuevopaciente);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "¡Paciente registrado exitosamente!", "OK");
+        }
+        await ObtenerPacientes();
+        LimpiarFormulario();
+        CloseModal();
+    }
+
+    private async Task EditarPaciente(PacienteDto paciente)
+    {
+        OpenModal();
+        nuevopaciente = new PacienteDto
+            {
+                PacienteId = paciente.PacienteId,
+                Nombre = paciente.Nombre,
+                Apellido = paciente.Apellido,
+                FechaNacimiento = paciente.FechaNacimiento,
+                Edad = paciente.Edad,
+                Sexo = paciente.Sexo,
+                Cedula = paciente.Cedula,
+                Correo = paciente.Correo,
+                Telefono = paciente.Telefono,
+                Nacionalidad = paciente.Nacionalidad,
+                TipoSangre = paciente.TipoSangre,
+                Direccion = paciente.Direccion
+            };
+        editando = true;
+    }
+
+    private async Task EliminarPaciente(PacienteDto paciente)
+    {
+        await PacienteService.EliminarPaciente(paciente.PacienteId);
+        await Application.Current.MainPage.DisplayAlert("Éxito", "Paciente eliminado exitosamente", "OK");
+        await ObtenerPacientes();
+    }
+
+    private void LimpiarFormulario()
+    {
+        nuevopaciente = new PacienteDto(); // Limpia el formulario
+        editando = false;
+    }
+
+    private int CalcularEdad(DateTime fechaNacimiento)
+    {
+        var hoy = DateTime.Today;
+        var edad = hoy.Year - fechaNacimiento.Year;
+        if (fechaNacimiento.Date > hoy.AddYears(-edad)) edad--;
+        return edad;
+    }
+
+    private void ActualizarEdad(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var fecha))
+        {
+            nuevopaciente.FechaNacimiento = fecha;
+            nuevopaciente.Edad = CalcularEdad(fecha);
+        }
+    }
+    
+
+
+    private List<PacienteDto> PacientesFiltrados()
+    {
+        if (string.IsNullOrEmpty(busqueda))
+            return pacientes;
+
+        return pacientes
+            .Where(p =>
+                (!string.IsNullOrEmpty(p.Nombre) && p.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(p.Cedula) && p.Cedula.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
+            )
+            .ToList(); // Esto debe devolver List<PacienteDto>
+    }
+}

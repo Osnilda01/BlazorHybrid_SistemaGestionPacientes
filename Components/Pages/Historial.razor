@@ -1,0 +1,466 @@
+﻿@page "/historial"
+@using MauiBlazorHybrid.Services
+@using NoJS.PDFViewer
+@inject IJSRuntime JSRuntime
+@inject IJSRuntime JS
+@using MigraDocCore.DocumentObjectModel;
+@using MigraDocCore.Rendering;
+@using MigraDocCore.DocumentObjectModel.Shapes;
+@using MigraDocCore.DocumentObjectModel.IO;
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject IHistorialService HistorialService
+@inject IPacienteService PacienteService
+
+
+<div class="pacientes-container">
+    <div class="pacientes-header">
+        <h1>📋 Historiales medicos</h1>
+        <p>Crea y gestiona historiales medicos</p>
+    </div>
+   
+
+
+<div class="pacientes-content">
+        @if (ShowModal)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #0078d7 0%, #005fa3 100%)">
+                            <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar historial" : "Nuevo historial")</b></h5>
+                            <button type="button" style="color:white" class="btn-close" @onclick="CloseModal"></button>
+                        </div>
+                        <div class="modal-body" style="background-color: #f7f7f7">
+                            <div class="citas-form-section">
+                                <EditForm Model="@nuevohistorial" OnValidSubmit="@Guardarhistorial">
+                                    <DataAnnotationsValidator />
+
+                                    <div class="citas-form-group">
+                                        <label for="paciente">Paciente *</label>
+                                        <InputSelect @bind-Value="nuevohistorial.PacienteId" class="form-control">
+                                            <option value="0">Seleccionar paciente</option>
+                                            @foreach (var paciente in pacientes)
+                                            {
+                                                <option value="@paciente.PacienteId">@paciente.Nombre @paciente.Apellido</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => nuevohistorial.PacienteId)" />
+                                    </div>
+
+                                    <div class="citas-form-group">
+                                        <label for="Diagnostico">Diagnostico</label>
+                                        <InputTextArea @bind-Value="nuevohistorial.Diagnostico" autocomplete="off" class="form-control"
+                                                       placeholder="Describe brevemente el diagnostico..." />
+                                    </div>
+
+                                    <div class="citas-form-group">
+                                        <label for="Tratamientos">Tratamientos</label>
+                                        <InputTextArea @bind-Value="nuevohistorial.Tratamiento" autocomplete="off" class="form-control"
+                                                       placeholder="Describe brevemente el tratamiento..." />
+                                    </div>
+
+                                    <div class="citas-form-group">
+                                        <label for="Enfermedades">Enfermedades del paciente</label>
+                                        <InputTextArea @bind-Value="nuevohistorial.Enfermedades" autocomplete="off" class="form-control"
+                                                       placeholder="Las enfermedades del paciente" />
+                                    </div>
+
+                                    <div class="citas-form-group">
+                                        <label for="Alergias">Alergias del paciente</label>
+                                        <InputTextArea @bind-Value="nuevohistorial.Alergias" autocomplete="off" class="form-control"
+                                                       placeholder="El paciente tiene alergias a algun medicamento?" />
+                                    </div>
+                                    
+
+                                    <div class="citas-form-group">
+                                        <label for="Observaciones">Observaciones</label>
+                                        <InputTextArea @bind-Value="nuevohistorial.Observaciones" autocomplete="off" class="form-control"
+                                                       placeholder="Alguna observacion..." />
+                                    </div>
+
+                                    <div class="citas-button-group">
+                                        <button type="submit" class="citas-btn citas-btn-primary">Guardar</button>
+                                        <button type="button" class="citas-btn citas-btn-secondary" @onclick="LimpiarFormulario">Limpiar</button>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+
+        @if (ShowModal2)
+        {
+            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #0078d7 0%, #005fa3 100%)">
+                            <h5 class="modal-title" style="color: white"><b>Historial medico</b></h5>
+                            <button type="button" style="color:white" class="btn-close" @onclick="CloseModal2"></button>
+                        </div>
+                        <div class="modal-body" style="background-color: #f7f7f7; overflow:auto; max-height:80vh;">
+                            <div class="citas-form-group">
+                                <div id="pdfContainer"></div>
+                            </div>
+                            <button class="btn btn-primary" @onclick="ImprimirPdf">Imprimir</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+
+    <div class="pacientes-list-section">
+        <div class="pacientes-search-bar">
+            <h2>Lista de historiales</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                <AuthorizeView Roles="Admin, Doctor">
+                     <Authorized>
+                <button class="btn btn-primary rounded-3 px-3 py-1" style="font-size:25px" @onclick="OpenModal"><b>+</b></button>
+                        </Authorized>
+                    </AuthorizeView>
+                <input style="flex: 1; min-width: 350px;" type="text" class="pacientes-search-input"
+                       placeholder="🔍 Buscar por nombre"
+                       @bind="busqueda" @bind:event="oninput" />
+            </div>
+        </div>
+
+        <div class="pacientes-stats">
+            <div class="stat-card">
+                <div class="stat-value">@historiales.Count</div>
+                <div class="stat-label">Historiales totales</div>
+            </div>
+        </div>
+
+        <div id="listaPacientes">
+            @if (HistorialesFiltrados().Any())
+            {
+                @foreach (var historial in HistorialesFiltrados())
+                {
+                    <div class="paciente-card">
+                        <div class="paciente-header-info">
+                            <div class="paciente-nombre-section">
+                                <span class="paciente-nombre">@historial.NombrePaciente </span>
+                            </div>
+                        </div>
+                        <div class="paciente-acciones">
+                            <AuthorizeView Roles="Admin, Doctor">
+                                 <Authorized>
+                            <button class="paciente-btn-small paciente-btn-edit" @onclick="() => EditarHistorial(historial)">
+                                Editar
+                            </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <button class="paciente-btn-small paciente-btn-edit" @onclick="() => VerHistorial(historial)">
+                                    Ver
+                                </button>
+                                <AuthorizeView Roles="Admin, Doctor">
+                                 <Authorized>
+                                <button class="paciente-btn-small btn-danger paciente-btn-cross" @onclick="() => EliminarHistorial(historial)">
+                                Eliminar
+                            </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="pacientes-empty-state">
+                    <p>@(string.IsNullOrEmpty(busqueda) ? "No hay pacientes registrados" : "No se encontraron pacientes")</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+</div>
+
+@code {
+    private bool ShowModal = false;
+    private bool ShowModal2 = false;
+
+    private byte[]? pdfBytes;
+
+    private List<HistorialMedicoDto> historiales = new();
+    private List<PacienteDto> pacientes = new();
+
+    private HistorialMedicoDto nuevohistorial = new();
+    private HistorialMedicoDto historialSeleccionado = new();
+    private bool editando = false;
+    private string busqueda = string.Empty;
+    void OpenModal() => ShowModal = true;
+    void CloseModal()
+    {
+        ShowModal = false;
+        LimpiarFormulario();
+    }
+
+    void OpenModal2() => ShowModal2 = true;
+    void CloseModal2()
+    {
+        ShowModal2 = false;
+        LimpiarFormulario();
+    }
+
+    /*private async Task GenerarPdf()
+    {
+        // Generas el PDF en memoria
+        pdfBytes = PdfCreator.CrearPdfBasico();
+
+        // Abres el modal
+        OpenModal2();
+
+        // Lo conviertes a Base64 para pasarlo a JS
+        var base64 = Convert.ToBase64String(pdfBytes);
+
+        // Llamas al interop para renderizarlo con PDF.js
+        await JS.InvokeVoidAsync("pdfInterop.loadPdfBase64", base64, "pdfContainer", 1.5);
+
+    }*/
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Obtenerhistorial();
+    }
+
+    private async Task Obtenerhistorial()
+    {
+        try
+        {
+        pacientes = await PacienteService.GetPacientesAsync();
+        historiales = await HistorialService.ObtenerHistorialesAsync();
+        }
+        catch (Exception ex)
+        {
+        Console.WriteLine($"Error al cargar historiales: {ex.Message}");
+        }
+    }
+
+    private async Task Guardarhistorial()
+    {
+        try
+        {
+            if (editando)
+            {
+                await HistorialService.ModificarHistorial(nuevohistorial);
+                await Application.Current.MainPage.DisplayAlert("Éxito", "¡Historial actualizado exitosamente!", "OK");
+            }
+            else
+            {
+                await HistorialService.CrearNuevoHistorial(nuevohistorial);
+                await Application.Current.MainPage.DisplayAlert("Éxito", "¡Historial registrado exitosamente!", "OK");
+            }
+
+            await Obtenerhistorial();
+            CloseModal();
+            LimpiarFormulario();
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", "Ocurrió un problema al guardar el historial.", "OK");
+        }
+    }
+
+    private async Task EditarHistorial(HistorialMedicoDto historial)
+    {
+        OpenModal();
+        nuevohistorial = new HistorialMedicoDto
+            {
+                PacienteId = historial.PacienteId,
+                NombrePaciente = historial.NombrePaciente,
+                HistorialMedicoId = historial.HistorialMedicoId,
+                Fecha = historial.Fecha,
+                Diagnostico = historial.Diagnostico,
+                Tratamiento = historial.Tratamiento,
+                Enfermedades = historial.Enfermedades,
+                Alergias = historial.Alergias,
+                Observaciones = historial.Observaciones
+            };
+        editando = true;
+    }
+
+    private async Task VerHistorial(HistorialMedicoDto historial)
+    {
+        historialSeleccionado = historial;
+
+        // Buscar paciente correspondiente
+        var paciente = pacientes.FirstOrDefault(p => p.PacienteId == historial.PacienteId);
+
+        // Generar PDF directamente aquí
+        var doc = new Document();
+        var section = doc.AddSection();
+
+        // Espacio debajo de la imagen
+        section.AddParagraph().Format.SpaceAfter = "2cm";
+
+        var titulo = section.AddParagraph("Historial Médico");
+        titulo.Format.Font.Size = 18;
+        titulo.Format.Font.Bold = true;
+        titulo.Format.Alignment = ParagraphAlignment.Left;
+        titulo.Format.SpaceAfter = "0.5cm";
+
+        section.AddParagraph().AddLineBreak();
+
+        // Datos básicos del paciente
+        var p1 = section.AddParagraph();
+        p1.AddFormattedText("Paciente: ", TextFormat.Bold);
+        p1.AddText(historial?.NombrePaciente ?? "Desconocido");
+        p1.Format.Font.Size = 12;
+        p1.Format.SpaceAfter = "0.3cm";
+
+        var p2 = section.AddParagraph();
+        p2.AddFormattedText("Edad: ", TextFormat.Bold);
+        p2.AddText(paciente?.Edad.ToString() ?? "N/A");
+        p2.Format.Font.Size = 12;
+        p2.Format.SpaceAfter = "0.3cm";
+
+        var n = section.AddParagraph();
+        n.AddFormattedText("Nacionalidad: ", TextFormat.Bold);
+        n.AddText(paciente?.Nacionalidad.ToString() ?? "N/A");
+        n.Format.Font.Size = 12;
+        n.Format.SpaceAfter = "0.3cm";
+
+        var s = section.AddParagraph();
+        s.AddFormattedText("Tipo de sangre: ", TextFormat.Bold);
+        s.AddText(paciente?.TipoSangre.ToString() ?? "N/A");
+        s.Format.Font.Size = 12;
+        s.Format.SpaceAfter = "0.3cm";
+
+        var p3 = section.AddParagraph();
+        p3.AddFormattedText("Creacion del historial: ", TextFormat.Bold);
+        p3.Format.Font.Size = 12;
+        p3.AddText(historial?.Fecha.ToString("dd/MM/yyyy"));
+        p3.Format.SpaceAfter = "0.7cm";
+        section.AddParagraph().AddLineBreak();
+
+        section.AddParagraph().AddLineBreak();
+
+        var en = section.AddParagraph();
+        var label = en.AddFormattedText("Enfermedades:", TextFormat.Bold);
+        label.Font.Size = 14;
+        en.AddLineBreak();
+        en.AddText(historial?.Enfermedades ?? "No especificado");
+        en.Format.Font.Size = 12;
+        en.Format.SpaceAfter = "0.8cm";
+
+        var diag = section.AddParagraph();
+        var diagLabel = diag.AddFormattedText("Diagnóstico:", TextFormat.Bold);
+        diagLabel.Font.Size = 14;             
+        diag.AddLineBreak();                   
+        diag.AddText(historial?.Diagnostico ?? "No especificado");
+        diag.Format.Font.Size = 12;       
+        diag.Format.SpaceAfter = "0.8cm";
+
+        var trat = section.AddParagraph();
+        var tratLabel = trat.AddFormattedText("Tratamiento:", TextFormat.Bold);
+        tratLabel.Font.Size = 14;
+        trat.AddLineBreak();
+        trat.AddText(historial?.Tratamiento ?? "No especificado");
+        trat.Format.Font.Size = 12;
+        trat.Format.SpaceAfter = "0.8cm";
+
+        // Alergias
+        var al = section.AddParagraph();
+        var alLabel = al.AddFormattedText("Alergias:", TextFormat.Bold);
+        alLabel.Font.Size = 14;
+        al.AddLineBreak();
+        al.AddText(historial?.Alergias ?? "No especificado");
+        al.Format.Font.Size = 12;
+        al.Format.SpaceAfter = "0.8cm";
+
+        // Observaciones
+        var ob = section.AddParagraph();   // 👉 aquí debe ser 'ob', no 'al'
+        var obLabel = ob.AddFormattedText("Observaciones:", TextFormat.Bold);
+        obLabel.Font.Size = 14;
+        ob.AddLineBreak();
+        ob.AddText(historial?.Observaciones ?? "No especificado");
+        ob.Format.Font.Size = 12;
+        ob.Format.SpaceAfter = "0.8cm";
+
+
+
+        var footer = section.Footers.Primary.AddParagraph();
+        footer.AddText("Reporte Pdf generado el " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
+        footer.Format.Alignment = ParagraphAlignment.Right;
+        footer.Format.Font.Size = 9;
+
+        var renderer = new PdfDocumentRenderer(unicode: true)
+            {
+                Document = doc
+            };
+        renderer.RenderDocument();
+
+        // 👉 Aquí agregamos la imagen con PdfSharpCore
+        var pdf = renderer.PdfDocument;
+        var page = pdf.Pages[0]; // primera página
+        var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+
+        // Cargar imagen desde archivo o stream
+        var imagePath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "img", "logo_medigestormain.png");
+        using var imageStream = File.OpenRead(imagePath);
+        var img = PdfSharpCore.Drawing.XImage.FromStream(() => imageStream);
+
+        // Dibujar imagen en coordenadas (x=40, y=40, ancho=120, alto=60)
+        gfx.DrawImage(img, 200, 40, 190, 80);
+
+        using var ms = new MemoryStream();
+        renderer.PdfDocument.Save(ms, false);
+        pdfBytes = ms.ToArray();
+
+        // Abrir modal y mostrar PDF
+        OpenModal2();
+        await Task.Delay(200);
+
+        var base64 = Convert.ToBase64String(pdfBytes);
+        await JS.InvokeVoidAsync("pdfInterop.loadPdfBase64", base64, "pdfContainer", 2.0);
+    }
+
+    private async Task ImprimirPdf()
+    {
+        if (pdfBytes != null)
+        {
+            var base64 = Convert.ToBase64String(pdfBytes);
+            await JS.InvokeVoidAsync("imprimirPdf", base64);
+        }
+    }
+
+    private async Task EliminarHistorial(HistorialMedicoDto historial)
+    {
+        bool confirmar = await Application.Current.MainPage.DisplayAlert(
+            "Confirmar",
+            "¿Estás seguro de eliminar este historial?",
+            "Sí",
+            "No");
+
+        if (confirmar)
+        {
+            await HistorialService.EliminarHistorial(historial.HistorialMedicoId);
+            await Application.Current.MainPage.DisplayAlert("Éxito", "Historial eliminada exitosamente", "OK");
+            await Obtenerhistorial();
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        nuevohistorial = new HistorialMedicoDto(); // Limpia el formulario
+        editando = false;
+    }
+
+    private List<HistorialMedicoDto> HistorialesFiltrados()
+    {
+        if (string.IsNullOrEmpty(busqueda))
+            return historiales;
+
+        return historiales
+            .Where(p =>
+                (!string.IsNullOrEmpty(p.NombrePaciente) && p.NombrePaciente.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
+            )
+            .ToList();
+    }
+}

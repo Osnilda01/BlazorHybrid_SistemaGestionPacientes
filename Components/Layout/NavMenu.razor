@@ -1,0 +1,66 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row navbar navbar-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#"><img src="img/logo_medigestor.png" style="width:160px; height:70px;" /></a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable vh-90" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="d-flex flex-column h-100">
+        <AuthorizeView Roles="Admin">
+           <Authorized>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="adminpage">
+                <img src="img/oi--security.png" alt="administrador" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span> Usuarios
+            </NavLink>
+        </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <div class="nav-item">
+            <NavLink class="nav-link" href="citas">
+                <img src="img/oi--calendar.png" alt="Citas" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span> Citas
+            </NavLink>
+        </div>
+
+        <div class="nav-item">
+            <NavLink class="nav-link" href="pacientes" Match="NavLinkMatch.All">
+                <img src="img/oi--people.png" alt="Pacientes" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span> Pacientes
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="doctores">
+                <img src="img/oi--person.png" alt="Doctor" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span> Doctores
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="reportes">
+                <img src="img/oi--bar-chart.png" alt="Doctor" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span> Reportes
+            </NavLink>
+        </div>
+
+        <div class="nav-item">
+            <NavLink class="nav-link" href="historial">
+                <img src="img/oi--document.png" alt="historial" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span>Historiales
+            </NavLink>
+        </div>
+
+
+        <div class="nav-item mt-auto mb-1">
+            <NavLink class="nav-link" href="login">
+                <img src="img/oi--account-logout.png" alt="Doctor" style="width:20px; height:20px; margin-right:8px;" />
+                <span aria-hidden="true"></span> Salir
+            </NavLink>
+        </div>
+
+    </nav>
+</div>
