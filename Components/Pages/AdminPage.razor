@@ -5,7 +5,7 @@
 
 <div class="pacientes-container">
         <div class="pacientes-header">
-        <h1>👤 Usuarios</h1>
+        <h1><img src="img/oi--security.png" alt="document" style="width:40px; height:36px;" /> Usuarios</h1>
         <p>Administra usuarios del sistema</p>
         </div>
 
@@ -19,7 +19,7 @@
                             <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar Usuario" : "Nuevo Usuario")</b></h5>
                         <button type="button" class="btn-close" @onclick="CloseModal"></button>
                     </div>
-                    <div class="modal-body" style="background-color: #f7f7f7">
+                        <div class="modal-body" style="background-color: #dbdbdb;">
                         <div class="pacientes-form-section">
                             <EditForm Model="@nuevousuario" OnValidSubmit="@GuardarUsuario">
                                 <DataAnnotationsValidator />

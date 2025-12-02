@@ -16,7 +16,10 @@
 
 <div class="reportes-container">
     <div class="reportes-header">
-        <h1>📊 Reportes y Estadísticas</h1>
+        <h1>
+            <img src="img/oi--bar-chart.png" alt="Reportes y estadisticas"
+                 style="width:40px; height:36px;" /> Reportes y Estadísticas
+        </h1>
         <p>Analiza el desempeño y estadísticas</p>
     </div>
 
@@ -70,7 +73,7 @@
         <div class="reportes-grid">
             <!-- Citas por Tipo -->
             <div class="reporte-card">
-                <h3>📋 Citas por Tipo de Consulta</h3>
+                <h3><img src="img/wpf--clipboard.png" alt="clipboard" style="width:20px; height:20px; position:relative; top:-2px;" /> Citas por Tipo de Consulta</h3>
                 <div class="chart-container">
             @if (barChartConfig != null)
             {
@@ -87,7 +90,7 @@
 
             <!-- Pacientes Nuevos vs Recurrentes-->
             <div class="reporte-card">
-                <h3>👥 Pacientes Nuevos vs Recurrentes</h3>
+                <h3><img src="img/personas.png" alt="mensaje" style="width:20px; height:20px; position:relative; top:-2px;" /> Pacientes Nuevos vs Recurrentes</h3>
                 <div class="pie-chart-container">
                     @if (pieConfig != null)
                     {
@@ -105,7 +108,7 @@
             <br/>
             <!-- Top pacientes con mas citas-->
             <div class="reporte-card reporte-card-full">
-                <h3>⭐ Top 10 Pacientes Frecuentes</h3>
+            <h3><img src="img/oi--star.png" alt="mensaje" style="width:20px; height:20px; position:relative; top:-2px;" /> Top 10 Pacientes Frecuentes</h3>
                 <div class="table-responsive table">
                     <table class="reportes-table  table-striped">
                         <thead class="thead-light">

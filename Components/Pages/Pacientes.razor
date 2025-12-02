@@ -6,7 +6,10 @@
 
 <div class="pacientes-container">
     <div class="pacientes-header">
-        <h1>👥 Gestión de Pacientes</h1>
+        <h1>
+            <img src="img/oi--people.png" alt="Gestión de Pacientes"
+                 style="width:40px; height:36px;" /> Gestión de Pacientes
+        </h1>
         <p>Administra la información de tus pacientes</p>
     </div>
 
@@ -19,7 +22,7 @@
                         <h5 class="modal-title" style="color: white" ><b>@(editando ? "Editar Paciente" : "Nuevo Paciente")</b></h5>
                         <button type="button" class="btn-close" @onclick="CloseModal"></button>
                     </div>
-                    <div class="modal-body" style="background-color: #f7f7f7">
+                    <div class="modal-body" style="background-color: #dbdbdb;">
                         <div class="pacientes-form-section">
                             <EditForm Model="@nuevopaciente" OnValidSubmit="@GuardarPaciente">
                                 <DataAnnotationsValidator />
@@ -39,7 +42,7 @@
                                 </div>
                                 </div>
                                 <div class="pacientes-form-group">
-                                    <label for="cedula">Cédula/DNI *</label>
+                                    <label for="cedula">Cédula/DNI</label>
                                     <InputText @bind-Value="nuevopaciente.Cedula" class="form-control"
                                                placeholder="000-0000000-0" autocomplete="off" />
                                     <ValidationMessage For="@(() => nuevopaciente.Cedula)" />
@@ -62,7 +65,7 @@
                                 </div>
 
                                 <div class="pacientes-form-group">
-                                    <label for="telefono">Teléfono *</label>
+                                    <label for="telefono">Teléfono</label>
                                     <InputText @bind-Value="nuevopaciente.Telefono" class="form-control"
                                                placeholder="809-000-0000" autocomplete="off" />
                                     <ValidationMessage For="@(() => nuevopaciente.Telefono)" />
@@ -101,6 +104,20 @@
                                     </InputSelect>
                                     <ValidationMessage For="@(() => nuevopaciente.TipoSangre)" />
                                 </div>
+
+                                <div class="pacientes-form-group">
+                                    <label for="SeguroMedico">Seguro Médico *</label>
+                                    <InputSelect @bind-Value="nuevopaciente.SeguroMedico" class="form-control">
+                                        <option value="Ninguno">Ninguno</option>
+                                        <option value="Humano">Humano</option>
+                                        <option value="ARS Universal">ARS Universal</option>
+                                        <option value="SENASA">SENASA</option>
+                                        <option value="Bupa Dominicana">Bupa Dominicana</option>
+                                        <option value="MAPFRE BHD">MAPFRE BHD</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => nuevopaciente.SeguroMedico)" />
+                                </div>
+
 
                                 <div class="pacientes-form-group">
                                     <label for="email">Correo Electrónico</label>
@@ -167,27 +184,27 @@
                                     <div class="paciente-detalles">
                                 <div>
                                         <div class="paciente-detalle-row">
-                                            <span class="detalle-icon">🆔</span>
-                                        <span><strong>Cédula:</strong>@(string.IsNullOrEmpty(paciente.Cedula) ? "Sin especificar" : paciente.Cedula)</span>
+                                        <span class="detalle-icon"><img src="img/wpf--business-contact.png" alt="cedula" style="width:20px; height:20px;" /></span>
+                                        <span><strong>Cédula: </strong>@(string.IsNullOrEmpty(paciente.Cedula) ? "Sin especificar" : paciente.Cedula)</span>
                                         </div>
                                         <div class="paciente-detalle-row">
-                                            <span class="detalle-icon">📞</span>
-                                        <span><strong>Teléfono:</strong>@(string.IsNullOrEmpty(paciente.Telefono) ? "Sin especificar" : paciente.Telefono)</span>
+                                        <span class="detalle-icon"><img src="img/wpf--phone.png" alt="Telefono" style="width:20px; height:20px;" /></span>
+                                        <span><strong>Teléfono: </strong>@(string.IsNullOrEmpty(paciente.Telefono) ? "Sin especificar" : paciente.Telefono)</span>
                                         </div>
                                         <div class="paciente-detalle-row">
-                                            <span class="detalle-icon">👤</span>
-                                            <span><strong>Sexo:</strong> @paciente.Sexo</span>
+                                        <span class="detalle-icon"><img src="img/oi--person2.png" alt="sexo" style="width:20px; height:20px;" /></span>
+                                            <span><strong>Sexo: </strong> @paciente.Sexo</span>
                                         </div>
                                         </div>
                                         <div>
                                                 <div class="paciente-detalle-row">
-                                                    <span class="detalle-icon">✉️</span>
-                                                    <span><strong>Email:</strong> @paciente.Correo</span>
+                                        <span class="detalle-icon"><img src="img/fontisto--email.png" alt="mensaje" style="width:20px; height:20px;" /></span>
+                                                    <span><strong>Email: </strong> @paciente.Correo</span>
                                                 </div>
                                         
                                             <div class="paciente-detalle-row">
-                                            <span class="detalle-icon">📍</span>
-                                                <span><strong>Direccion:</strong> @paciente.Direccion</span>
+                                        <span class="detalle-icon"><img src="img/wpf--geo-fence.png" alt="ubicacion" style="width:20px; height:20px;" /></span>
+                                                <span><strong>Direccion: </strong> @paciente.Direccion</span>
                                             </div>
                                         </div>
                                     </div>
@@ -287,7 +304,8 @@
                 Telefono = paciente.Telefono,
                 Nacionalidad = paciente.Nacionalidad,
                 TipoSangre = paciente.TipoSangre,
-                Direccion = paciente.Direccion
+                Direccion = paciente.Direccion,
+                SeguroMedico = paciente.SeguroMedico
             };
         editando = true;
     }

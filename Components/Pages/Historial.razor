@@ -15,7 +15,7 @@
 
 <div class="pacientes-container">
     <div class="pacientes-header">
-        <h1>📋 Historiales medicos</h1>
+        <h1><img src="img/oi--document.png" alt="document" style="width:40px; height:36px;" /> Historiales medicos</h1>
         <p>Crea y gestiona historiales medicos</p>
     </div>
    
@@ -31,7 +31,7 @@
                             <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar historial" : "Nuevo historial")</b></h5>
                             <button type="button" style="color:white" class="btn-close" @onclick="CloseModal"></button>
                         </div>
-                        <div class="modal-body" style="background-color: #f7f7f7">
+                        <div class="modal-body" style="background-color: #dbdbdb;">
                             <div class="citas-form-section">
                                 <EditForm Model="@nuevohistorial" OnValidSubmit="@Guardarhistorial">
                                     <DataAnnotationsValidator />
@@ -331,6 +331,12 @@
         s.AddText(paciente?.TipoSangre.ToString() ?? "N/A");
         s.Format.Font.Size = 12;
         s.Format.SpaceAfter = "0.3cm";
+
+        var seg = section.AddParagraph();
+        seg.AddFormattedText("Tipo de seguro: ", TextFormat.Bold);
+        seg.AddText(paciente?.SeguroMedico.ToString() ?? "N/A");
+        seg.Format.Font.Size = 12;
+        seg.Format.SpaceAfter = "0.3cm";
 
         var p3 = section.AddParagraph();
         p3.AddFormattedText("Creacion del historial: ", TextFormat.Bold);

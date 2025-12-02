@@ -7,7 +7,10 @@
     
     <div class="pacientes-container">
         <div class="pacientes-header">
-            <h1>👨‍⚕️ Doctores</h1>
+        <h1>
+            <img src="img/wpf--medical-doctorwhite.png" alt="Doctores"
+                     style="width:40px; height:36px;" /> Doctores
+        </h1>
             <p>Administra la información de tus doctores</p>
         </div>
 
@@ -21,7 +24,7 @@
                             <h5 class="modal-title" style="color: white"><b>@(editando ? "Editar Doctor" : "Nuevo Doctor")</b></h5>
                         <button type="button" class="btn-close" @onclick="CloseModal"></button>
                     </div>
-                    <div class="modal-body" style="background-color: #f7f7f7">
+                    <div class="modal-body" style="background-color: #dbdbdb;">
                         <div class="pacientes-form-section">
                             <EditForm Model="@nuevodoctor" OnValidSubmit="@GuardarDoctor">
                                 <DataAnnotationsValidator />
@@ -127,19 +130,19 @@
                                     </div>
                                 </div>
                                     <div class="paciente-detalle-row">
-                                        <span class="detalle-icon">📞</span>
+                                <span class="detalle-icon"><img src="img/wpf--phone.png" alt="Telefono" style="width:20px; height:20px;" /></span>
                                         <span><strong>Teléfono:</strong> @doctor.Telefono</span>
                                     </div>
                                     <div class="paciente-detalle-row">
-                                        <span class="detalle-icon">👤</span>
+                                <span class="detalle-icon"><img src="img/oi--person2.png" alt="sexo" style="width:20px; height:20px;" /></span>
                                         <span><strong>Sexo:</strong> @doctor.Sexo</span>
                                     </div>
                                     <div class="paciente-detalle-row">
-                                <span class="detalle-icon">📋</span>
+                                <span class="detalle-icon"><img src="img/wpf--clipboard.png" alt="especialidad" style="width:20px; height:20px;" /></span>
                                         <span><strong>Especialidad:</strong> @doctor.Especialidad</span>
                                     </div>
                                         <div class="paciente-detalle-row">
-                                            <span class="detalle-icon">✉️</span>
+                                <span class="detalle-icon"><img src="img/fontisto--email.png" alt="correo" style="width:20px; height:20px;" /></span>
                                             <span><strong>Email:</strong> @doctor.Correo</span>
                                         </div>
                             <div class="paciente-acciones">

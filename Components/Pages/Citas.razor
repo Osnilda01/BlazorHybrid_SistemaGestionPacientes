@@ -11,7 +11,10 @@
 
 <div class="citas-container">
     <div class="citas-header">
-        <h1>📅 Gestión de Citas</h1>
+        <h1>
+            <img src="img/oi--calendar.png" alt="Gestión de citas"
+                 style="width:40px; height:36px;" /> Gestión de Citas
+        </h1>
         <p>Programa y administra las citas de tus pacientes</p>
     </div>
 
@@ -123,11 +126,11 @@
                                 </span>
                             </div>
                             <div class="cita-detalles">
-                                <p><strong>📅 Fecha:</strong> @cita.Fecha.ToString("dd/MM/yyyy")</p>
-                                <p><strong>🕐 Hora:</strong> @cita.Hora.ToString("HH:mm")</p>
-                                <p><strong>👨‍⚕️ Doctor:</strong> @cita.NombreDoctor</p>
-                                <p><strong>📋 Tipo:</strong> @cita.TipoConsulta</p>
-                                <p><strong>💬 Motivo:</strong> @(string.IsNullOrEmpty(cita.Motivo) ? "Sin especificar" : cita.Motivo)</p>
+                                <p><strong><img src="img/wpf--today.png" alt="clock" style="width:20px; height:20px; position:relative; top:-2px;" /> Fecha:</strong> @cita.Fecha.ToString("dd/MM/yyyy")</p>
+                                <p><strong><img src="img/oi--clock.png" alt="clock" style="width:20px; height:20px; position:relative; top:-2px;" /> Hora:</strong> @cita.Hora.ToString("HH:mm")</p>
+                                <p><strong><img src="img/wpf--medical-doctor.png" alt="doctor" style="width:20px; height:20px; position:relative; top:-2px;" /> Doctor:</strong> @cita.NombreDoctor</p>
+                                <p><strong><img src="img/wpf--clipboard.png" alt="clipboard" style="width:20px; height:20px; position:relative; top:-2px;" /> Tipo:</strong> @cita.TipoConsulta</p>
+                                <p><strong><img src="img/fontisto--commenting.png" alt="comentario" style="width:20px; height:20px; position:relative; top:-2px;" /> Motivo:</strong> @(string.IsNullOrEmpty(cita.Motivo) ? "Sin especificar" : cita.Motivo)</p>
                             </div>
                             <div class="cita-acciones">
                                 <button class="cita-btn-small cita-btn-edit" @onclick="() => EditarCita(cita)">Editar</button>
