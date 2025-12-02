@@ -69,11 +69,11 @@ namespace MauiBlazorHybrid.Services
 
         public async Task ActualizarEstadoCitasAsync()
         {
-            var citasPendientes = await _context.Citas
-                .Where(c => c.Estado == "Pendiente") // solo pendientes
+            var citas = await _context.Citas
+                .Where(c => c.Estado != "Cancelada")
                 .ToListAsync();
 
-            foreach (var cita in citasPendientes)
+            foreach (var cita in citas)
             {
                 var fechaHoraCita = new DateTime(
                     cita.Fecha.Year,
@@ -84,14 +84,20 @@ namespace MauiBlazorHybrid.Services
                     cita.Hora.Second
                 );
 
+                // Recalcular estado según la fecha/hora
                 if (fechaHoraCita <= DateTime.Now)
                 {
                     cita.Estado = "Completada";
+                }
+                else
+                {
+                    cita.Estado = "Pendiente";
                 }
             }
 
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task<List<(string NombrePaciente, int NumeroCitas)>> ObtenerPacientesFrecuentesAsync()
