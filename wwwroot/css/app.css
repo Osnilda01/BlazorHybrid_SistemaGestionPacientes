@@ -716,7 +716,6 @@ h1:focus {
 .paciente-detalle-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     margin: 0.4rem 0;
     color: #555;
     gap: 8px;
@@ -732,6 +731,12 @@ h1:focus {
 .detalle-icon {
     font-size: 1.1rem;
 }
+
+    .detalle-icon img {
+        position: relative;
+        top: -2px; /* ajusta según lo que veas */
+    }
+
 
 .paciente-acciones {
     display: flex;
