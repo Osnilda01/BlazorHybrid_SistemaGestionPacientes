@@ -11,6 +11,7 @@
 @inject NavigationManager NavigationManager
 @inject IHistorialService HistorialService
 @inject IPacienteService PacienteService
+@inject ICitaService CitaService
 
 
 <div class="pacientes-container">
@@ -187,7 +188,7 @@
 
     private List<HistorialMedicoDto> historiales = new();
     private List<PacienteDto> pacientes = new();
-
+    private List<CitaDto> citas = new();
     private HistorialMedicoDto nuevohistorial = new();
     private HistorialMedicoDto historialSeleccionado = new();
     private bool editando = false;
@@ -206,8 +207,8 @@
         LimpiarFormulario();
     }
 
-    /*private async Task GenerarPdf()
-    {
+        /*private async Task GenerarPdf()
+        {
         // Generas el PDF en memoria
         pdfBytes = PdfCreator.CrearPdfBasico();
 
@@ -233,12 +234,13 @@
     {
         try
         {
-        pacientes = await PacienteService.GetPacientesAsync();
-        historiales = await HistorialService.ObtenerHistorialesAsync();
+            pacientes = await PacienteService.GetPacientesAsync();
+            historiales = await HistorialService.ObtenerHistorialesAsync();
+            citas = await CitaService.ObtenerCitasAsync();
         }
         catch (Exception ex)
         {
-        Console.WriteLine($"Error al cargar historiales: {ex.Message}");
+            Console.WriteLine($"Error al cargar historiales: {ex.Message}");
         }
     }
 
@@ -291,6 +293,13 @@
 
         // Buscar paciente correspondiente
         var paciente = pacientes.FirstOrDefault(p => p.PacienteId == historial.PacienteId);
+
+        var citasRecientes = citas
+        .Where(c => c.PacienteId == historial.PacienteId)   // filtra por paciente
+        .OrderByDescending(c => c.Fecha)                    // ordena por fecha descendente
+        .Take(10)                                           // toma las 10 más recientes
+        .ToList();
+
 
         // Generar PDF directamente aquí
         var doc = new Document();
@@ -389,12 +398,47 @@
         ob.Format.Font.Size = 12;
         ob.Format.SpaceAfter = "0.8cm";
 
+        if (citasRecientes.Any())
+        {
+            var citasSection = section.AddParagraph();
+            var citasLabel = citasSection.AddFormattedText("Citas médicas recientes:", TextFormat.Bold);
+            citasLabel.Font.Size = 14;
+            citasSection.Format.SpaceAfter = "0.5cm";
+
+            var table = section.AddTable();
+            table.Borders.Width = 0.75;
+
+            //Tamaño de celdas
+            table.AddColumn("3cm"); // Fecha
+            table.AddColumn("5cm"); // Motivo
+            table.AddColumn("4cm"); // Médico
+            table.AddColumn("4cm"); // Tipo de cita
 
 
-        var footer = section.Footers.Primary.AddParagraph();
-        footer.AddText("Reporte Pdf generado el " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
-        footer.Format.Alignment = ParagraphAlignment.Right;
-        footer.Format.Font.Size = 9;
+            var rowHeader = table.AddRow();
+            rowHeader.Cells[0].AddParagraph("Fecha");
+            rowHeader.Cells[1].AddParagraph("Motivo");
+            rowHeader.Cells[2].AddParagraph("Médico");
+            rowHeader.Cells[3].AddParagraph("Tipo de cita");
+
+            foreach (var cita in citasRecientes)
+            {
+                var row = table.AddRow();
+                row.Cells[0].AddParagraph(cita.Fecha.ToString("dd/MM/yyyy"));
+                row.Cells[1].AddParagraph(cita.Motivo ?? "N/A");
+                row.Cells[2].AddParagraph(cita.NombreDoctor ?? "N/A");
+                row.Cells[3].AddParagraph(cita.TipoConsulta ?? "N/A");
+            }
+
+
+            var footer = section.Footers.Primary.AddParagraph();
+            footer.AddText("Reporte Pdf generado el " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
+            footer.Format.Alignment = ParagraphAlignment.Right;
+            footer.Format.Font.Size = 9;
+
+        }
+
+        
 
         var renderer = new PdfDocumentRenderer(unicode: true)
             {
@@ -421,7 +465,7 @@
 
         // Abrir modal y mostrar PDF
         OpenModal2();
-        await Task.Delay(200);
+        await Task.Delay(100);
 
         var base64 = Convert.ToBase64String(pdfBytes);
         await JS.InvokeVoidAsync("pdfInterop.loadPdfBase64", base64, "pdfContainer", 2.0);
