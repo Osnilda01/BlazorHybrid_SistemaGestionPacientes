@@ -28,6 +28,8 @@
             <label style="margin-left: 10%">Tipo de Reporte:</label>
             <select @bind="tipoReporte" class="filter-select">
                 <option value="general">General</option>
+                <option value="citas">Citas</option>
+                <option value="pacientesfrec">P.Frecuentes</option>
             </select>
         <button style="margin-right: 5%" class="btn-export" @onclick="ExportarReporteCitas" @onclick:preventDefault="true">📥 Generar Excel</button>
         </div>
@@ -135,12 +137,11 @@
     </div>
 
 @code {
-    private string periodoSeleccionado = "mes";
-    private string tipoReporte = "general";
+    private string? tipoReporte = "general";
     private EstadisticasModel estadisticas = new EstadisticasModel();
     private List<PacienteDto> pacientes = new();
     private List<CitaDto> citas = new();
-    private List<(string NombrePaciente, int NumeroCitas)> pacientesFrecuentes;
+    private List<(string NombrePaciente, int NumeroCitas)>? pacientesFrecuentes;
     private int cuentacitas;
 
     //Para los graficos de chartjs:
@@ -155,7 +156,7 @@
         citas = await CitaService.ObtenerCitasAsync();
         pacientesFrecuentes = await CitaService.ObtenerPacientesFrecuentesAsync();
     }
-    
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && citas != null && citas.Any())
@@ -190,7 +191,7 @@
             barChartConfig.Data.Datasets.Add(dataset);
 
             //Segundo grafico:
-           
+
             // Calcular cantidades
             var agrupadoPorPaciente = citas.GroupBy(c => c.PacienteId);
 
@@ -230,7 +231,7 @@
 
     private void CargarEstadisticas()
     {
-        
+
     }
 
     private async Task ExportarReporteCitas()
@@ -238,24 +239,61 @@
         using var workbook = new XLWorkbook();
         var wsStats = workbook.Worksheets.Add("Estadísticas");
 
-        // Encabezados
-        wsStats.Cell(1, 1).Value = "Métrica";
-        wsStats.Cell(1, 2).Value = "Cantidad";
 
-        // Estadísticas
-        wsStats.Cell(2, 1).Value = "Total Citas";
-        wsStats.Cell(2, 2).Value = citas.Count;
+        if (tipoReporte == "general" || tipoReporte == "citas")
+        {
+            // Encabezados
+            wsStats.Cell(1, 1).Value = "Métrica";
+            wsStats.Cell(1, 1).Style.Fill.BackgroundColor = XLColor.Navy;
+            wsStats.Cell(1, 1).Style.Font.FontColor = XLColor.White;
+            wsStats.Cell(1, 1).Style.Font.Bold = true;
 
-        wsStats.Cell(3, 1).Value = "Completadas";
-        wsStats.Cell(3, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "completada");
 
-        wsStats.Cell(4, 1).Value = "Pendientes";
-        wsStats.Cell(4, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "pendiente");
+            wsStats.Cell(1, 2).Value = "Cantidad";
+            wsStats.Cell(1, 2).Style.Fill.BackgroundColor = XLColor.Navy;
+            wsStats.Cell(1, 2).Style.Font.FontColor = XLColor.White;
+            wsStats.Cell(1, 2).Style.Font.Bold = true;
 
-        wsStats.Cell(5, 1).Value = "Canceladas";
-        wsStats.Cell(5, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "cancelada");
 
-        wsStats.Columns().AdjustToContents();
+            // Estadísticas
+            wsStats.Cell(2, 1).Value = "Total Citas";
+            wsStats.Cell(2, 2).Value = citas.Count;
+
+            wsStats.Cell(3, 1).Value = "Completadas";
+            wsStats.Cell(3, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "completada");
+
+            wsStats.Cell(4, 1).Value = "Pendientes";
+            wsStats.Cell(4, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "pendiente");
+
+            wsStats.Cell(5, 1).Value = "Canceladas";
+            wsStats.Cell(5, 2).Value = citas.Count(c => c.Estado.Trim().ToLower() == "cancelada");
+
+            wsStats.Columns().AdjustToContents();
+        }
+
+        if (tipoReporte == "general" || tipoReporte == "pacientesfrec")
+        {
+            wsStats.Cell(7, 1).Value = "Top pacientes mas frecuentes";
+            wsStats.Cell(7, 1).Style.Fill.BackgroundColor = XLColor.Navy;
+            wsStats.Cell(7, 1).Style.Font.FontColor = XLColor.White;
+            wsStats.Cell(7, 1).Style.Font.Bold = true;
+
+            wsStats.Cell(8, 1).Value = "Nombre del paciente";
+            wsStats.Cell(8, 1).Style.Font.Bold = true;
+            wsStats.Cell(8, 2).Value = "Numero de citas";
+            wsStats.Cell(8, 2).Style.Font.Bold = true;
+
+        int fila = 9;
+        foreach(var frecuente in pacientesFrecuentes)
+        {
+            wsStats.Cell(fila, 1).Value = frecuente.NombrePaciente;
+            wsStats.Cell(fila, 2).Value = frecuente.NumeroCitas;
+            fila++;
+        }
+        wsStats.Columns().AdjustToContents();    
+
+        }
+        
 
         // Guardar en memoria
         using var ms = new MemoryStream();
