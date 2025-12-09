@@ -17,6 +17,7 @@ Este sistema no se limita a la gestión de datos personales de los pacientes sol
 - Visual Studio 2022
 
 ## Tecnologías utilizadas
+- .NET 8
 - Blazor Hybrid con .NET MAUI
 - Sqlite
 - Supabase
