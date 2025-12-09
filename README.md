@@ -22,4 +22,4 @@ Este sistema no se limita a la gestión de datos personales de los pacientes sol
 - Supabase
 
 ## Consideraciones al ejecutar el proyecto
-- Al clonar el repositorio o descargarlo como zip al ejecutarse el proyecto automaticamente se sincronizara con una base de datos remota supabase y creara una base de datos local para entrar al sistema debes ingresar en la pantalla de inicio de sesión con nombre "admin" y la contraseña "admin123".
+Al clonar el repositorio o descargarlo como zip al ejecutarse el proyecto automaticamente se sincronizara con una base de datos remota supabase y creara una base de datos local para entrar al sistema debes ingresar en la pantalla de inicio de sesión con nombre "admin" y la contraseña "admin123".
